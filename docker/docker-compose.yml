@@ -27,7 +27,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    command: "python worker.py"
+    command: "python worker/worker.py"
     depends_on:
       - db
       - broker

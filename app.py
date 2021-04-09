@@ -55,5 +55,34 @@ class OrderItemsByPickTicket(db.Model):
     UniqueConstraint('fcid', 'pickticket_id', 'gtin', name='pick_ticket_order_item_unique')
 
 
+@dataclass
+class RequestedItemsByPickTicket(db.Model):
+    fcid: str
+    pickticket_id: str
+    gtin: str
+    quantity: int
+
+    fcid = db.Column(db.String(200), primary_key=True)
+    pickticket_id = db.Column(db.String(200), primary_key=True)
+    gtin = db.Column(db.String(200), primary_key=True)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+
+    UniqueConstraint('fcid', 'pickticket_id', 'gtin', name='requested_item_unique')
+
+
+@dataclass
+class AllocationsByPickTicket(db.Model):
+    fcid: str
+    pickticket_id: str
+    gtin: str
+    quantity: int
+
+    fcid = db.Column(db.String(200), primary_key=True)
+    pickticket_id = db.Column(db.String(200), primary_key=True)
+    gtin = db.Column(db.String(200), primary_key=True)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

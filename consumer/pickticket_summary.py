@@ -1,6 +1,5 @@
 import sys
 
-sys.path.append('/app/app_main')
 sys.path.append('/app')
 print(sys.path)
 
