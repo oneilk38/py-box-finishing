@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 from sqlalchemy import UniqueConstraint, String, Column, Integer, Boolean
 from flask_sqlalchemy import Model
+from Models.database import db
+
 
 @dataclass
-class PickTicketById(Model):
+class PickTicketById(db.Model):
     fcid: str
     pickticket_id: str
     lpn: str

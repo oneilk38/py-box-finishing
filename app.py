@@ -1,13 +1,29 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import typing
-from flask import Flask
+from typing import List
+
+import marshmallow_dataclass
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import UniqueConstraint
+from marshmallow import Schema
+
+from Models.database import db
+# Tables
+from Models.requested_items_by_pickticket import RequestedItemsByPickTicket
+from Models.allocations_by_pickticket import AllocationsByPickTicket
+from Models.pickticket_by_id import PickTicketById
+from Models.order_items_by_pickticket import OrderItemsByPickTicket
+from Models.picked_items_by_pickticket import PickedItemsByPickTicket
+from Models.pickticket_by_container import PickTicketByContainer
+
+from api.pickticket import get_pickticket
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:root@db/box-finishing"
 
-db = SQLAlchemy(app)
+db.app = app
+db.init_app(app)
 
 
 @app.route('/')
@@ -15,73 +31,17 @@ def hello_world():
     return 'Hello World!'
 
 
-@dataclass
-class PickTicketById(db.Model):
-    fcid: str
-    pickticket_id: str
-    lpn: str
-    asn: str
-    status: int
-    putwall_location: str
-
-    fcid = db.Column(db.String(200), primary_key=True)
-    pickticket_id = db.Column(db.String(200), primary_key=True)
-    lpn = db.Column(db.String(200), nullable=True)
-    asn = db.Column(db.String(200), nullable=True)
-    status = db.Column(db.Integer, nullable=False, default=0)
-    putwall_location = db.Column(db.String(200), nullable=True)
-
-    UniqueConstraint('fcid', 'pickticket_id', name='pick_ticket_unique')
-
-
-@dataclass
-class OrderItemsByPickTicket(db.Model):
-    fcid: str
-    pickticket_id: str
-    gtin: str
-    title: str
-    url: str
-    hazmat: bool
-    fragile: bool
-
-    fcid = db.Column(db.String(200), primary_key=True)
-    pickticket_id = db.Column(db.String(200), primary_key=True)
-    gtin = db.Column(db.String(200), primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    url = db.Column(db.String(200), nullable=False)
-    hazmat = db.Column(db.Boolean, nullable=False)
-    fragile = db.Column(db.Boolean, nullable=False)
-
-    UniqueConstraint('fcid', 'pickticket_id', 'gtin', name='pick_ticket_order_item_unique')
-
-
-@dataclass
-class RequestedItemsByPickTicket(db.Model):
-    fcid: str
-    pickticket_id: str
-    gtin: str
-    quantity: int
-
-    fcid = db.Column(db.String(200), primary_key=True)
-    pickticket_id = db.Column(db.String(200), primary_key=True)
-    gtin = db.Column(db.String(200), primary_key=True)
-    quantity = db.Column(db.Integer, nullable=False, default=1)
-
-    UniqueConstraint('fcid', 'pickticket_id', 'gtin', name='requested_item_unique')
-
-
-@dataclass
-class AllocationsByPickTicket(db.Model):
-    fcid: str
-    pickticket_id: str
-    gtin: str
-    quantity: int
-
-    fcid = db.Column(db.String(200), primary_key=True)
-    pickticket_id = db.Column(db.String(200), primary_key=True)
-    gtin = db.Column(db.String(200), primary_key=True)
-    quantity = db.Column(db.Integer, nullable=False, default=1)
-
+@app.route('/api/box-finishing/<fcid>/<container_id>', methods=['GET'])
+def get(fcid: str, container_id: str):
+    container: PickTicketByContainer = PickTicketByContainer.query.filter_by(fcid=fcid, container_id=container_id).first()
+    if container:
+        try:
+            dto, status_code = get_pickticket(fcid, container.pickticket_id)
+            return jsonify(dto), status_code
+        except Exception as err:
+            print(f'Failed to retrieve PickTicket {container.pickticket_id}, {err}'), 500
+    else:
+        return jsonify(error=f'Container {container_id} not found'), 404
 
 
 if __name__ == '__main__':

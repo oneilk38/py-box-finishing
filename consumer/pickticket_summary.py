@@ -1,9 +1,10 @@
 import sys
 
 sys.path.append('/app')
-print(sys.path)
 
-from app import db, PickTicketById, OrderItemsByPickTicket
+from app import db
+from Models.pickticket_by_id import PickTicketById
+from Models.order_items_by_pickticket import OrderItemsByPickTicket
 
 import typing
 from dataclasses import dataclass, field
@@ -73,7 +74,7 @@ class Info:
         unknown = EXCLUDE
     box: ShipBox = field(default_factory=dict)
     pickItems: typing.List[PickElement] = field(default_factory=list)
-    fcId: str = field(metadata={}, default='fcId')
+    fcid: str = field(metadata={}, default='fcId')
     pickTicketId: str = field(metadata={}, default='ptId')
     originalOrderId: str = field(metadata={}, default='ogId')
     carrierMethodId: str = field(metadata={}, default='cmId')
@@ -94,7 +95,7 @@ pt_summary_schema = marshmallow_dataclass.class_schema(PickTicketSummary)()
 
 def to_pickticket_by_id(summary: PickTicketSummary) -> PickTicketById:
     return PickTicketById(pickticket_id=summary.info.pickTicketId,
-                          fcid=summary.info.fcId,
+                          fcid=summary.info.fcid,
                           asn=summary.info.packageAsn, lpn=None,
                           putwall_location=None)
 
@@ -116,11 +117,12 @@ def persist_pickticket(summary: PickTicketSummary):
         db.session.commit()
         print(f'Successfully added PickTicket {pick_ticket_by_id.pickticket_id} to DB!')
     except Exception as err:
+        db.session.rollback()
         print(f'Failed to add {pick_ticket_by_id.pickticket_id} to DB, {err}')
 
 
 def persist_order_items(summary: PickTicketSummary):
-    to_order_item = partial(to_order_item_by_pickticket, summary.info.pickTicketId, summary.info.fcId)
+    to_order_item = partial(to_order_item_by_pickticket, summary.info.pickTicketId, summary.info.fcid)
     order_items_by_pickticket = map(to_order_item, summary.info.pickItems)
 
     # Add order items
@@ -129,6 +131,7 @@ def persist_order_items(summary: PickTicketSummary):
         db.session.commit()
         print(f'Successfully added order items for PickTicket {summary.info.pickTicketId} to DB!')
     except Exception as err:
+        db.session.rollback()
         print(f'Failed to add items for {summary.info.pickTicketId} to DB, {err}')
 
 

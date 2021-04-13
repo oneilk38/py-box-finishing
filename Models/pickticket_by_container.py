@@ -3,15 +3,15 @@ from sqlalchemy import UniqueConstraint, String, Column, Integer, Boolean
 from flask_sqlalchemy import Model
 from Models.database import db
 
+
 @dataclass
-class AllocationsByPickTicket(db.Model):
+class PickTicketByContainer(db.Model):
     fcid: str
+    container_id: str
     pickticket_id: str
-    gtin: str
-    quantity: int
 
     fcid = Column(String(200), primary_key=True)
-    pickticket_id = Column(String(200), primary_key=True)
-    gtin = Column(String(200), primary_key=True)
-    quantity = Column(Integer, nullable=False, default=1)
+    container_id = Column(String(200), primary_key=True)
+    pickticket_id = Column(String(200))
 
+    UniqueConstraint('fcid', 'container_id', name='container_unique')

@@ -4,6 +4,8 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    environment:
+      FLASK_APP='app:py':
     command: "python app.py"
     ports:
       - 8001:5000
