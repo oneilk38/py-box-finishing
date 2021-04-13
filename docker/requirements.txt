@@ -5,7 +5,6 @@ Flask-Migrate==2.5.3
 Flask-Script==2.0.6
 Flask-Cors==3.0.9
 requests==2.25.0
-mysqlclient==2.0.1
 confluent-kafka==1.6.0
 jsonpickle==2.0.0
 marshmallow==3.11.1
