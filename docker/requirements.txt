@@ -6,6 +6,7 @@ Flask-Script==2.0.6
 Flask-Cors==3.0.9
 requests==2.25.0
 confluent-kafka==1.6.0
+mysqlclient==2.0.1
 jsonpickle==2.0.0
 marshmallow==3.11.1
 marshmallow-dataclass==8.4.1

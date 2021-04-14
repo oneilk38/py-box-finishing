@@ -3,8 +3,7 @@ import sys
 sys.path.append('/app')
 
 from app import db
-from Models.pickticket_by_id import PickTicketById
-from Models.order_items_by_pickticket import OrderItemsByPickTicket
+from Models.tables import PickTicketById, OrderItemsByPickTicket
 
 import typing
 from dataclasses import dataclass, field
@@ -100,39 +99,24 @@ def to_pickticket_by_id(summary: PickTicketSummary) -> PickTicketById:
                           putwall_location=None)
 
 
-def to_order_item_by_pickticket(pickticket_id, fcid, pick_element: PickElement) -> OrderItemsByPickTicket:
+def to_order_item_by_pickticket(pickticket_id, fcid, pick_element: PickElement, pickticket: PickTicketById) -> OrderItemsByPickTicket:
     return OrderItemsByPickTicket(pickticket_id=pickticket_id,
                                   fcid=fcid,
                                   gtin=pick_element.gtin,
                                   title=pick_element.productTitle,
                                   url=pick_element.imgUrl,
                                   hazmat=pick_element.isORMD,
-                                  fragile=pick_element.requireOutboundPrep)
+                                  fragile=pick_element.requireOutboundPrep,
+                                  pickticket=pickticket)
 
 
-def persist_pickticket(summary: PickTicketSummary):
-    pick_ticket_by_id = to_pickticket_by_id(summary)
-    try:
-        db.session.add(pick_ticket_by_id)
-        db.session.commit()
-        print(f'Successfully added PickTicket {pick_ticket_by_id.pickticket_id} to DB!')
-    except Exception as err:
-        db.session.rollback()
-        print(f'Failed to add {pick_ticket_by_id.pickticket_id} to DB, {err}')
+def to_order_items_by_pickticket(pickticket: PickTicketById, pt_summary: PickTicketSummary):
+    order_items_by_pickticket = [
+        to_order_item_by_pickticket(pt_summary.info.pickTicketId, pt_summary.info.fcid, order_item, pickticket)
+        for order_item in pt_summary.info.pickItems
+    ]
 
-
-def persist_order_items(summary: PickTicketSummary):
-    to_order_item = partial(to_order_item_by_pickticket, summary.info.pickTicketId, summary.info.fcid)
-    order_items_by_pickticket = map(to_order_item, summary.info.pickItems)
-
-    # Add order items
-    try:
-        db.session.add_all(order_items_by_pickticket)
-        db.session.commit()
-        print(f'Successfully added order items for PickTicket {summary.info.pickTicketId} to DB!')
-    except Exception as err:
-        db.session.rollback()
-        print(f'Failed to add items for {summary.info.pickTicketId} to DB, {err}')
+    return order_items_by_pickticket
 
 
 def handle_pickticket_summary(topic, msg: Message):
@@ -141,8 +125,17 @@ def handle_pickticket_summary(topic, msg: Message):
         pt_summary: PickTicketSummary = pt_summary_schema.loads(msg.value())
         print(f'Successfully deserialised pt summary message')
 
-        persist_pickticket(pt_summary)
-        persist_order_items(pt_summary)
+        pickticket = to_pickticket_by_id(pt_summary)
+        try:
+            db.session.add(pickticket)
+            order_items_by_pickticket = to_order_items_by_pickticket(pickticket, pt_summary)
+            db.session.add_all(order_items_by_pickticket)
+            db.session.commit()
+            print(f'Successfully created PickTicket and order items for PT {pickticket.pickticket_id}')
+        except Exception as err:
+            print(f'Failed to add PT to DB {pickticket.pickticket_id}')
+
+
 
     except Exception as err:
         print(f'failed to deserialise msg, {err}')

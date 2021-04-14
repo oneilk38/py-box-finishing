@@ -1,13 +1,11 @@
 import typing
 from dataclasses import dataclass, field
-from functools import partial
 
 from confluent_kafka import Message
 
 import marshmallow_dataclass
-from Models.picked_items_by_pickticket import PickedItemsByPickTicket
-from Models.pickticket_by_id import PickTicketById
-from Models.pickticket_by_container import PickTicketByContainer
+from Models.tables import PickedItemsByPickTicket, PickTicketById, PickTicketByContainer
+
 from marshmallow import EXCLUDE
 from app import db
 
@@ -36,65 +34,52 @@ class PickComplete:
 pick_completed_schema = marshmallow_dataclass.class_schema(PickComplete)()
 
 
-def to_pickticket_by_container(pick_complete: PickComplete):
-    return PickTicketByContainer(fcid=pick_complete.fcId,
+def to_pickticket_by_container(pick_complete: PickComplete, pickticket: PickTicketById):
+    return PickTicketByContainer(fcid=pickticket.fcid,
                                  container_id=pick_complete.containerId,
-                                 pickticket_id=pick_complete.pickTicketId)
+                                 pickticket_id=pickticket.pickticket_id,
+                                 pickticket=pickticket)
 
 
-def to_picked_item(fcid, pickticket_id, order_id, pick: Pick) -> PickedItemsByPickTicket:
-    return PickedItemsByPickTicket(pickticket_id=pickticket_id,
-                                   fcid=fcid,
-                                   order_id=order_id,
+def to_picked_item(pick: Pick, pickticket: PickTicketById) -> PickedItemsByPickTicket:
+    return PickedItemsByPickTicket(pickticket_id=pickticket.pickticket_id,
+                                   fcid=pickticket.fcid,
                                    gtin=pick.gtin,
                                    quantity=pick.quantity)
 
 
-def persist_container(pick_complete: PickComplete):
-    pt_by_container: PickTicketByContainer = to_pickticket_by_container(pick_complete)
-    try:
-        db.session.add(pt_by_container)
-        db.session.commit()
-    except Exception as err:
-        db.session.rollback()
-        print(f'Failed to add container {pick_complete.containerId} to DB, {err}')
+def to_picked_items(pickticket: PickTicketById, pick_complete: PickComplete):
+    picked_items = [
+        to_picked_item(picked_item, pickticket)
+        for picked_item
+        in pick_complete.picks
+    ]
 
-
-def persist_pick_completed(pick_complete: PickComplete):
-    to_picked = partial(to_picked_item, pick_complete.fcId, pick_complete.pickTicketId, pick_complete.orderId)
-    picked_items = map(to_picked, pick_complete.picks)
-    try:
-        db.session.add_all(picked_items)
-        db.session.commit()
-        print(f'Successfully added picks to DB for PickTicket {pick_complete.pickTicketId}')
-    except Exception as err:
-        db.session.rollback()
-        print(f'Failed to add picks to DB for PickTicket {pick_complete.pickTicketId}, {err}')
-
-
-def persist_pickticket(pick_complete: PickComplete):
-    pickticket: PickTicketById = PickTicketById.query.filter_by(pickticket_id=pick_complete.pickTicketId,
-                                                                fcid=pick_complete.fcId).first()
-    if pickticket:
-        pickticket.lpn = pick_complete.containerId
-        try:
-            db.session.commit()
-            print(f'Successfully updated PickTicket {pick_complete.pickTicketId}')
-        except Exception as err:
-            db.session.rollback()
-            print(f'Failed to update PickTicket {pick_complete.pickTicketId}, {err}')
-    else:
-        print(f'Failed to retrieve PickTicket {pick_complete.pickTicketId}')
+    return picked_items
 
 
 def handle_pick_completed(topic, msg: Message):
     print(f'Consuming {topic}....')
     try:
+
         pick_completed: PickComplete = pick_completed_schema.loads(msg.value())
         print(f'Successfully deserialised pick completed message')
-        persist_container(pick_completed)
-        persist_pickticket(pick_completed)
-        persist_pick_completed(pick_completed)
+
+        pickticket: PickTicketById = PickTicketById.query.filter_by(pickticket_id=pick_completed.pickTicketId).first()
+        if pickticket:
+            pickticket.lpn = pick_completed.containerId
+            container = to_pickticket_by_container(pick_complete=pick_completed, pickticket=pickticket)
+            picked_items = to_picked_items(pickticket, pick_complete=pick_completed)
+            try:
+                db.session.add(container)
+                db.session.add_all(picked_items)
+                db.session.commit()
+                print(f'Successfully added picks to DB for PickTicket {pickticket.pickticket_id}')
+            except Exception as err:
+                db.session.rollback()
+                print(f'Failed to add picks to DB for PickTicket {pickticket.pickticket_id}, {err}')
+        else:
+            print(f'Could not find PickTicket {pick_completed.pickTicketId}')
     except Exception as err:
         print(f'failed to deserialise, {err}')
 
