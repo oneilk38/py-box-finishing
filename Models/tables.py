@@ -1,7 +1,26 @@
 from dataclasses import dataclass
-from sqlalchemy import UniqueConstraint, String, Column, Integer, Boolean
-from flask_sqlalchemy import Model
+from re import match
+
+from sqlalchemy import UniqueConstraint, String, Column, Integer, Boolean, CheckConstraint, Enum
+
+from Exceptions.Exception import PickTicketNotFoundException, ContainerNotFoundException
 from Models.database import db
+import enum
+
+
+class Status(enum.Enum):
+    created = 1
+    picked = 2
+    packed = 3
+    error = 4
+    putwall = 5
+
+    def to_string(self):
+        if self == Status.created: return "Created"
+        elif self == Status.picked: return "Picked"
+        elif self == Status.packed: return "Packed"
+        elif self == Status.putwall: return "Putwall"
+        else: return "Error"
 
 
 @dataclass
@@ -11,7 +30,8 @@ class PickTicketById(db.Model):
     fcid = Column(String(200))
     lpn = Column(String(200), nullable=True)
     asn = Column(String(200), nullable=True)
-    status = Column(Integer, nullable=False, default=0)
+    status = Column(Enum(Status))
+    # Column(Integer, nullable=False, default=0)
     putwall_location = Column(String(200), nullable=True)
 
     order_items = db.relationship('OrderItemsByPickTicket', backref='pickticket')
@@ -19,7 +39,38 @@ class PickTicketById(db.Model):
     allocations = db.relationship('AllocationsByPickTicket', backref='pickticket')
     requested_items = db.relationship('RequestedItemsByPickTicket', backref='pickticket')
     container = db.relationship('PickTicketByContainer', backref='pickticket')
+
+    #__table_args = (
+    #    CheckConstraint(status >= 0 and status <= 5, name='check_valid_enum'),
+    #    {})
+
     #UniqueConstraint('fcid', 'pickticket_id', name='pick_ticket_unique')
+
+    @staticmethod
+    def get_pickticket(fcid, pickticket_id):
+        pickticket: PickTicketById = PickTicketById.query.filter_by(pickticket_id=pickticket_id, fcid=fcid).first()
+        if pickticket:
+            return pickticket
+        else:
+            raise PickTicketNotFoundException(f'Could not find PickTicket {pickticket_id}')
+
+
+    @staticmethod
+    def get_pickticket_by_container(container_id):
+        container: PickTicketByContainer = PickTicketByContainer.get_container(container_id)
+
+        query = db.session \
+            .query(PickTicketByContainer, PickTicketById) \
+            .filter_by(container_id=container.container_id).join(PickTicketById).first()
+
+        # Query returns Container, PickTicket object as a tuple
+        pickticket: PickTicketById = query[1]
+
+        if pickticket:
+            return pickticket
+        else:
+            raise PickTicketNotFoundException(f'Could not find PickTicket associated to Container {container_id}')
+
 
 
 @dataclass
@@ -79,5 +130,13 @@ class PickTicketByContainer(db.Model):
     fcid = Column(String(200), primary_key=True)
     container_id = Column(String(200), primary_key=True)
     pickticket_id = Column(String(200), db.ForeignKey(PickTicketById.pickticket_id))
+
+    @staticmethod
+    def get_container(container_id):
+        container = PickTicketByContainer.query.filter_by(container_id=container_id).first()
+        if container:
+            return container
+        else:
+            raise ContainerNotFoundException(f'Could not find Container {container_id}')
 
     #UniqueConstraint('fcid', 'container_id', name='container_unique')

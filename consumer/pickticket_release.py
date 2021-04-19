@@ -1,11 +1,14 @@
 import typing, sys
+from functools import partial
 
 sys.path.append('/app')
+from Exceptions.Exception import PoisonMessageException, PickTicketNotFoundException, InvalidPickTicketStateException
+
 from dataclasses import dataclass, field
 
 from confluent_kafka import Message
 from app import db
-from Models.tables import AllocationsByPickTicket, RequestedItemsByPickTicket, PickTicketById
+from Models.tables import AllocationsByPickTicket, RequestedItemsByPickTicket, PickTicketById, Status
 
 import marshmallow_dataclass
 from marshmallow import EXCLUDE
@@ -76,24 +79,49 @@ def to_requested_items_by_pickticket(pickticket: PickTicketById, pt_release: Pic
     return requested_items
 
 
-def handle_pickticket_released(topic, msg: Message):
-    print(f'Consuming {topic}....')
+def deserialise(msg: Message):
     try:
-        pt_released: PickTicketReleased = pt_release_schema.loads(msg.value())
-        print(f'Successfully deserialised pt released message, {pt_released}')
-
-        pickticket = PickTicketById.query.filter_by(pickticket_id=pt_released.pickTicketId).first()
-        if pickticket:
-            allocations = to_allocations_by_pickticket(pickticket, pt_released)
-            requested_items = to_requested_items_by_pickticket(pickticket, pt_released)
-            try:
-                db.session.add_all(allocations)
-                db.session.add_all(requested_items)
-                db.session.commit()
-                print(f'Added Requested Items and Allocations to Db for PickTicket {pickticket.pickticket_id}')
-            except Exception as err:
-                print(f'Failed to add Requested Items and Allocations to Db for PickTicket {pickticket.pickticket_id}')
-        else:
-            print(f'Could not find PickTicket {pt_released.pickTicketId}')
+        return pt_release_schema.loads(msg.value())
     except Exception as err:
-        print(f'failed to deserialise, {err}')
+        raise PoisonMessageException(f'Failed to deserialise, Cannot process this message, {msg.value()}, err: {err}')
+
+
+def persist_released_to_db(pt_released: PickTicketReleased, pickticket : PickTicketById):
+    allocations = to_allocations_by_pickticket(pickticket, pt_released)
+    requested_items = to_requested_items_by_pickticket(pickticket, pt_released)
+    db.session.add_all(allocations)
+    db.session.add_all(requested_items)
+    db.session.commit()
+    print(f'Successfully updated PickTicket {pickticket.pickticket_id}, allocations and requested items to DB!')
+
+
+def persist_cancelled_to_db(pt_released: PickTicketReleased, pickticket):
+    pickticket.status = Status.cancelled
+    db.session.commit()
+    print(f'PickTicket {pickticket.pickticket_id} cancelled!')
+
+
+def persist_to_db(get_pt, persist_released, persist_cancelled, pt_released: PickTicketReleased):
+    if pt_released.pickTicketId == None or pt_released.fcId == None:
+        raise PoisonMessageException(f'Cannot process this message, invalid fcid/pickticket, {pt_released}')
+
+    pickticket: PickTicketById = get_pt(pt_released.fcId, pt_released.pickTicketId)
+
+    if pickticket.status == Status.created:
+        if len(pt_released.requestedItems) == 0: persist_cancelled(pt_released, pickticket)
+        else: persist_released(pt_released, pickticket)
+    else:
+        raise InvalidPickTicketStateException(f'Invalid state, not processing released message')
+
+
+def handle_pickticket_released(persist, msg: Message):
+    pt_released: PickTicketReleased = deserialise(msg)
+    persist(pt_released)
+
+
+
+# Partially Apply
+persist_released = partial(persist_to_db,
+                           PickTicketById.get_pickticket,
+                           persist_released_to_db,
+                           persist_cancelled_to_db)

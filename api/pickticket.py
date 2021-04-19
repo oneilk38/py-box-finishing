@@ -51,16 +51,14 @@ def to_pickticket_response(pickticket_by_id: PickTicketById):
         'orderItems': order_items,
         'requestedItems': requested_items,
         'pickedItems': picked_items,
-        'allocations': allocations
+        'allocations': allocations,
+        'status': pickticket_by_id.status.to_string()
     }
 
     return res
 
 
-def get_pickticket(pickticket: PickTicketById):
-    try:
-        dto = to_pickticket_response(pickticket)
-
-        return dto, 200
-    except Exception as err:
-        return {'error': err}, 500
+def get_pickticket_dto(container_id):
+    pickticket = PickTicketById.get_pickticket_by_container(container_id)
+    dto = to_pickticket_response(pickticket)
+    return dto

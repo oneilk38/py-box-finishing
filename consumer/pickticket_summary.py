@@ -1,9 +1,10 @@
 import sys
 
 sys.path.append('/app')
+from Exceptions.Exception import PoisonMessageException
 
 from app import db
-from Models.tables import PickTicketById, OrderItemsByPickTicket
+from Models.tables import PickTicketById, OrderItemsByPickTicket, Status
 
 import typing
 from dataclasses import dataclass, field
@@ -96,7 +97,8 @@ def to_pickticket_by_id(summary: PickTicketSummary) -> PickTicketById:
     return PickTicketById(pickticket_id=summary.info.pickTicketId,
                           fcid=summary.info.fcid,
                           asn=summary.info.packageAsn, lpn=None,
-                          putwall_location=None)
+                          putwall_location=None,
+                          status=Status.created)
 
 
 def to_order_item_by_pickticket(pickticket_id, fcid, pick_element: PickElement, pickticket: PickTicketById) -> OrderItemsByPickTicket:
@@ -119,25 +121,33 @@ def to_order_items_by_pickticket(pickticket: PickTicketById, pt_summary: PickTic
     return order_items_by_pickticket
 
 
-def handle_pickticket_summary(topic, msg: Message):
-    print(f'Consuming {topic}....')
+def persist(pt_summary: PickTicketSummary):
+    if pt_summary.info.pickTicketId == None or len(pt_summary.info.pickItems) == 0:
+        raise PoisonMessageException(f'Cannot process this message, {pt_summary}')
+
+    pickticket = to_pickticket_by_id(pt_summary)
+    db.session.add(pickticket)
+    order_items_by_pickticket = to_order_items_by_pickticket(pickticket, pt_summary)
+    db.session.add_all(order_items_by_pickticket)
+    db.session.commit()
+    print(f'Successfully created PickTicket and order items for PT {pickticket.pickticket_id}')
+
+
+def deserialise(msg: Message):
     try:
-        pt_summary: PickTicketSummary = pt_summary_schema.loads(msg.value())
-        print(f'Successfully deserialised pt summary message')
-
-        pickticket = to_pickticket_by_id(pt_summary)
-        try:
-            db.session.add(pickticket)
-            order_items_by_pickticket = to_order_items_by_pickticket(pickticket, pt_summary)
-            db.session.add_all(order_items_by_pickticket)
-            db.session.commit()
-            print(f'Successfully created PickTicket and order items for PT {pickticket.pickticket_id}')
-        except Exception as err:
-            print(f'Failed to add PT to DB {pickticket.pickticket_id}')
-
-
-
+        return pt_summary_schema.loads(msg.value())
     except Exception as err:
-        print(f'failed to deserialise msg, {err}')
+        raise PoisonMessageException(f'Failed to deserialise, Cannot process this message, {msg.value()}, err: {err}')
+
+
+def handle_pickticket_summary(topic, msg: Message):
+    try:
+        pt_summary: PickTicketSummary = deserialise(msg)
+        persist(pt_summary)
+    except PoisonMessageException as poison:
+        print(f'Ignoring message as cant process, {poison}')
+    except Exception as err:
+        db.session.rollback()
+        print(f'Failed to add to DB, {err}, {msg.value()}')
 
 

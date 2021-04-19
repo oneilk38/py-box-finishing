@@ -148,11 +148,11 @@ def run_complete_producer(pickticket_id, container_id):
     producer.poll(1)
 
 
-pickticket_id = "PT96134B"
-container_id = "333035"
+pickticket_id = "PT160777A"
+container_id = "CON5"
 
 run_summary_producer(pickticket_id)
 time.sleep(2.0)
-run_release_producer(pickticket_id)
-time.sleep(2.0)
-run_complete_producer(pickticket_id, container_id)
+run_release_producer("45654646546")
+#time.sleep(2.0)
+#run_complete_producer(pickticket_id, container_id)

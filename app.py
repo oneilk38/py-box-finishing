@@ -8,7 +8,9 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import UniqueConstraint
 from marshmallow import Schema
-from api.pickticket import get_pickticket
+
+from Exceptions.Exception import PickTicketNotFoundException, ContainerNotFoundException
+from api.pickticket import get_pickticket_dto
 
 from Models.database import db
 # Tables
@@ -36,17 +38,17 @@ def hello_world():
 
 @app.route('/api/box-finishing/<fcid>/<container_id>', methods=['GET'])
 def get(fcid: str, container_id: str):
-    query = db.session\
-            .query(PickTicketByContainer, PickTicketById)\
-            .filter_by(container_id=container_id).join(PickTicketById).first()
-
-    pt: PickTicketById = query[1]
-
-    if pt:
-        dto = get_pickticket(pt)
+    try:
+        dto = get_pickticket_dto(container_id)
         return jsonify(dto), 200
-    else:
-        return jsonify(error=f'Could not find PickTicket associated to container {container_id}'), 404
+    except PickTicketNotFoundException as not_found:
+        print(f'Failed to find PickTicket associated to Container {container_id}')
+        return jsonify(error=f'Failed to find PickTicket associated to Container {container_id}'), 404
+    except ContainerNotFoundException as not_found:
+        print(f'Failed to find Container {container_id}')
+        return jsonify(error=f'Failed to find Container {container_id}'), 404
+    except Exception as err:
+        return jsonify(error="Unknown Server Error"), 500
 
 
 if __name__ == '__main__':
