@@ -1,6 +1,7 @@
 version: '3.3'
 services:
   backend:
+    restart: always
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -15,6 +16,7 @@ services:
       - db
 
   consumer:
+    restart: always
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -26,6 +28,7 @@ services:
       - backend
 
   worker:
+    restart: always
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -34,6 +37,7 @@ services:
       - db
       - broker
       - zookeeper
+      - backend
 
   db:
     image: mysql:5.7.22

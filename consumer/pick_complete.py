@@ -6,7 +6,7 @@ from confluent_kafka import Message
 
 import marshmallow_dataclass
 
-from Exceptions.Exception import PickTicketNotFoundException, PoisonMessageException, InvalidPickTicketStateException
+from Exceptions.exns import PickTicketNotFoundException, PoisonMessageException, InvalidPickTicketStateException
 from Models.tables import PickedItemsByPickTicket, PickTicketById, PickTicketByContainer, Status
 
 from marshmallow import EXCLUDE
@@ -61,21 +61,21 @@ def to_picked_items(pickticket: PickTicketById, pick_complete: PickComplete):
     return picked_items
 
 
-def persist_pickticket_to_db(pick_complete: PickComplete, pickticket: PickTicketById):
+def persist_pickticket_to_db(session, pick_complete: PickComplete, pickticket: PickTicketById):
     pickticket.lpn = pick_complete.containerId
     pickticket.status = Status.picked
     print(f'Successfully updated PickTicket {pickticket.pickticket_id}')
 
 
-def persist_container_to_db(pick_complete: PickComplete, pickticket: PickTicketById):
+def persist_container_to_db(session, pick_complete: PickComplete, pickticket: PickTicketById):
     container = to_pickticket_by_container(pick_complete=pick_complete, pickticket=pickticket)
-    db.session.add(container)
+    session.add(container)
     print(f'Successfully updated Container {container.container_id}')
 
 
-def persist_picked_items_to_db(pick_complete: PickComplete, pickticket: PickTicketById):
+def persist_picked_items_to_db(session, pick_complete: PickComplete, pickticket: PickTicketById):
     picked_items = to_picked_items(pickticket, pick_complete=pick_complete)
-    db.session.add_all(picked_items)
+    session.add_all(picked_items)
     print(f'Successfully saved picked items to DB for PickTicket {pickticket.pickticket_id}')
 
 
@@ -97,7 +97,7 @@ def deserialise(msg: Message):
         raise PoisonMessageException(f'Failed to deserialise, Cannot process this message, {msg.value()}, err: {err}')
 
 
-def persist_to_db(get_pt, persist_pt, persist_container, persist_picked_items, pick_complete: PickComplete):
+def persist_to_db(session, get_pt, persist_pt, persist_container, persist_picked_items, pick_complete: PickComplete):
     validate_message(pick_complete)
 
     if pick_complete.destination != "BoxFinishing":
@@ -107,10 +107,10 @@ def persist_to_db(get_pt, persist_pt, persist_container, persist_picked_items, p
     pickticket = get_pt(pick_complete.fcId, pick_complete.pickTicketId)
 
     if pickticket.status == Status.created:
-        persist_pt(pick_complete, pickticket)
-        persist_container(pick_complete, pickticket)
-        persist_picked_items(pick_complete, pickticket)
-        db.session.commit()
+        persist_pt(session, pick_complete, pickticket)
+        persist_container(session, pick_complete, pickticket)
+        persist_picked_items(session, pick_complete, pickticket)
+        session.commit()
     else:
         raise InvalidPickTicketStateException(f'Already consumed picked message for PickTicket {pickticket.pickticket_id}, ignoring.')
 
@@ -131,7 +131,7 @@ def handle_pick_completed(persist, msg: Message):
 
 
 # Partially Apply
-persist_pick_complete = partial(persist_to_db,
+persist_pick_complete = partial(partial(persist_to_db, db.session),
                                 PickTicketById.get_pickticket,
                                 persist_pickticket_to_db,
                                 persist_container_to_db,

@@ -3,7 +3,7 @@ from re import match
 
 from sqlalchemy import UniqueConstraint, String, Column, Integer, Boolean, CheckConstraint, Enum
 
-from Exceptions.Exception import PickTicketNotFoundException, ContainerNotFoundException
+from Exceptions.exns import PickTicketNotFoundException, ContainerNotFoundException
 from Models.database import db
 import enum
 
@@ -14,12 +14,14 @@ class Status(enum.Enum):
     packed = 3
     error = 4
     putwall = 5
+    cancelled = 6
 
     def to_string(self):
         if self == Status.created: return "Created"
         elif self == Status.picked: return "Picked"
         elif self == Status.packed: return "Packed"
         elif self == Status.putwall: return "Putwall"
+        elif self == Status.cancelled: return "Cancelled"
         else: return "Error"
 
 
@@ -39,6 +41,16 @@ class PickTicketById(db.Model):
     allocations = db.relationship('AllocationsByPickTicket', backref='pickticket')
     requested_items = db.relationship('RequestedItemsByPickTicket', backref='pickticket')
     container = db.relationship('PickTicketByContainer', backref='pickticket')
+
+    def __eq__(self, other):
+        return  (self.pickticket_id == other.pickticket_id) and \
+                (self.fcid == other.fcid) and \
+                (self.lpn == other.lpn) and \
+                (self.asn == other.asn) and \
+                (self.status == other.status) and \
+                (self.putwall_location == other.putwall_location)
+
+
 
     #__table_args = (
     #    CheckConstraint(status >= 0 and status <= 5, name='check_valid_enum'),
@@ -86,6 +98,15 @@ class OrderItemsByPickTicket(db.Model):
     fragile = Column(Boolean, nullable=False)
 
     # UniqueConstraint('fcid', 'pickticket_id', 'gtin', name='pick_ticket_order_item_unique')
+
+    def __eq__(self, other):
+        return  (self.pickticket_id == other.pickticket_id) and \
+                (self.fcid == other.fcid) and \
+                (self.gtin == other.gtin) and \
+                (self.title == other.title) and \
+                (self.url == other.url) and \
+                (self.hazmat == other.hazmat) and \
+                (self.fragile == other.fragile)
 
 
 @dataclass

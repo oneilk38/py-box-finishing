@@ -10,3 +10,4 @@ mysqlclient==2.0.1
 jsonpickle==2.0.0
 marshmallow==3.11.1
 marshmallow-dataclass==8.4.1
+alchemy-mock==0.4.3

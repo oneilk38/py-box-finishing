@@ -2,7 +2,7 @@ import typing, sys
 from functools import partial
 
 sys.path.append('/app')
-from Exceptions.Exception import PoisonMessageException, PickTicketNotFoundException, InvalidPickTicketStateException
+from Exceptions.exns import PoisonMessageException, PickTicketNotFoundException, InvalidPickTicketStateException
 
 from dataclasses import dataclass, field
 
@@ -86,30 +86,30 @@ def deserialise(msg: Message):
         raise PoisonMessageException(f'Failed to deserialise, Cannot process this message, {msg.value()}, err: {err}')
 
 
-def persist_released_to_db(pt_released: PickTicketReleased, pickticket : PickTicketById):
+def persist_released_to_db(session, pt_released: PickTicketReleased, pickticket : PickTicketById):
     allocations = to_allocations_by_pickticket(pickticket, pt_released)
     requested_items = to_requested_items_by_pickticket(pickticket, pt_released)
-    db.session.add_all(allocations)
-    db.session.add_all(requested_items)
-    db.session.commit()
+    session.add_all(allocations)
+    session.add_all(requested_items)
+    session.commit()
     print(f'Successfully updated PickTicket {pickticket.pickticket_id}, allocations and requested items to DB!')
 
 
-def persist_cancelled_to_db(pt_released: PickTicketReleased, pickticket):
+def persist_cancelled_to_db(session, pt_released: PickTicketReleased, pickticket):
     pickticket.status = Status.cancelled
-    db.session.commit()
+    session.commit()
     print(f'PickTicket {pickticket.pickticket_id} cancelled!')
 
 
-def persist_to_db(get_pt, persist_released, persist_cancelled, pt_released: PickTicketReleased):
+def persist_to_db(session, get_pt, persist_released, persist_cancelled, pt_released: PickTicketReleased):
     if pt_released.pickTicketId == None or pt_released.fcId == None:
         raise PoisonMessageException(f'Cannot process this message, invalid fcid/pickticket, {pt_released}')
 
     pickticket: PickTicketById = get_pt(pt_released.fcId, pt_released.pickTicketId)
 
     if pickticket.status == Status.created:
-        if len(pt_released.requestedItems) == 0: persist_cancelled(pt_released, pickticket)
-        else: persist_released(pt_released, pickticket)
+        if len(pt_released.requestedItems) == 0: persist_cancelled(session, pt_released, pickticket)
+        else: persist_released(session, pt_released, pickticket)
     else:
         raise InvalidPickTicketStateException(f'Invalid state, not processing released message')
 
@@ -119,9 +119,8 @@ def handle_pickticket_released(persist, msg: Message):
     persist(pt_released)
 
 
-
 # Partially Apply
-persist_released = partial(persist_to_db,
+persist_released = partial(partial(persist_to_db, db.session),
                            PickTicketById.get_pickticket,
                            persist_released_to_db,
                            persist_cancelled_to_db)

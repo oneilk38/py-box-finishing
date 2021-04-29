@@ -6,10 +6,11 @@ import pick_complete
 
 
 # Kafka Config
-from Exceptions.Exception import InvalidPickTicketStateException, PickTicketNotFoundException, PoisonMessageException
+from Exceptions.exns import InvalidPickTicketStateException, PickTicketNotFoundException, PoisonMessageException
 
 import sys
 sys.path.append('/app')
+
 from app import db
 
 consumer_conf = {'bootstrap.servers': "broker:29092",
@@ -32,7 +33,7 @@ kafka_admin.create_topics([new_topic, pick_ticket_summary_topic, pick_ticket_rel
 
 # Wire Up Handlers
 handle_pickticket_summary = partial(pickticket_summary.handle_pickticket_summary,
-                                    pick_ticket_summary_topic.topic)
+                                    pickticket_summary.persist_summary)
 
 handle_pickticket_released = partial(pickticket_release.handle_pickticket_released,
                                      pickticket_release.persist_released)

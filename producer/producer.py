@@ -5,12 +5,15 @@ from confluent_kafka import Producer
 import time
 
 
-producer_conf = {
-    'bootstrap.servers': 'localhost:9092',
-    'client.id': 'kon-local-python-producer'
-}
+def get_producer():
+    producer_conf = {
+        'bootstrap.servers': 'localhost:9092',
+        'client.id': 'kon-local-python-producer'
+    }
 
-producer = Producer(producer_conf)
+    producer = Producer(producer_conf)
+
+    return producer
 
 
 def acked(err, msg):
@@ -134,25 +137,32 @@ def getPickCompleteMsg(pickticket_id, container_id):
 
 
 def run_summary_producer(pickticket_id):
+    producer = get_producer()
     producer.produce("pt-summary", key="msg1", value=getSummaryMsg(pickticket_id), callback=acked)
     producer.poll(1)
 
 
 def run_release_producer(pickticket_id):
+    producer = get_producer()
     producer.produce("pt-release", key="msg1", value=getReleasedMsg(pickticket_id), callback=acked)
     producer.poll(1)
 
 
 def run_complete_producer(pickticket_id, container_id):
+    producer = get_producer()
     producer.produce("pick-completed", key="msg1", value=getPickCompleteMsg(pickticket_id, container_id), callback=acked)
     producer.poll(1)
 
 
-pickticket_id = "PT160777A"
-container_id = "CON5"
+pickticket_id = "PT1ll60h77B"
+container_id = "CON9856"
 
-run_summary_producer(pickticket_id)
-time.sleep(2.0)
-run_release_producer("45654646546")
+#run_summary_producer(pickticket_id)
+#time.sleep(2.0)
+#run_release_producer(pickticket_id)
 #time.sleep(2.0)
 #run_complete_producer(pickticket_id, container_id)
+
+producer = get_producer()
+producer.produce("pickticket-events", key="msg1", value="PACKED", callback=acked)
+producer.poll(1)
