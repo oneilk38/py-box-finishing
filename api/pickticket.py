@@ -1,7 +1,9 @@
 from dataclasses import dataclass, field
 from typing import List
 
-from marshmallow import Schema
+import marshmallow
+import marshmallow_dataclass
+from marshmallow import Schema, EXCLUDE, fields
 
 # Tables
 from Models.tables import \
@@ -14,6 +16,8 @@ from Models.tables import \
 
 @dataclass
 class PickItem(Schema):
+    class Meta:
+        unknown = EXCLUDE
     gtin: str = field()
     quantity: int = field()
 
@@ -24,6 +28,8 @@ def to_pick_item(gtin, quantity):
 
 @dataclass
 class OrderItem(Schema):
+    class Meta:
+        unknown = EXCLUDE
     gtin: str = field()
     imageUrl: str = field()
     isHazmat: bool = field()
@@ -34,6 +40,20 @@ class OrderItem(Schema):
 def to_order_item(gtin, imageUrl, isHazmat, isORMD, title):
     return OrderItem(gtin=gtin, imageUrl=imageUrl, isHazmat=isHazmat, isORMD=isORMD, title=title)
 
+
+
+@dataclass
+class Packed(Schema):
+    class Meta:
+        unknown = EXCLUDE
+        #fields = ['packed_items']
+    packed_items: List[Item] = fields.Nested(item_schema, many=True)
+    fcid: str = field(metadata={}, default='fcid')
+    pickticket_id: str = field(metadata={}, default='pickticketid')
+    container_id: str = field(metadata={}, default='33030101')
+
+    cancelled_items: List[Item] = field(default_factory=list)
+    previous_lpns: List[str] = field(default_factory=list)
 
 
 def to_pickticket_response(pickticket_by_id: PickTicketById):

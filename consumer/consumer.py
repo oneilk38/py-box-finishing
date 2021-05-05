@@ -9,6 +9,9 @@ import pick_complete
 from Exceptions.exns import InvalidPickTicketStateException, PickTicketNotFoundException, PoisonMessageException
 
 import sys
+
+from contracts import Packed, packed_schema
+
 sys.path.append('/app')
 
 from app import db
@@ -44,7 +47,8 @@ handle_pick_completed = partial(pick_complete.handle_pick_completed,
 # Handle Message
 def handle_other(msg: Message):
     print(f'Consuming {new_topic.topic}....')
-    print(f'{msg.value()}')
+    packed = packed_schema.loads(msg.value())
+    print(packed)
 
 
 def handle_with_retry(handle, msg, retry_attempt=0):

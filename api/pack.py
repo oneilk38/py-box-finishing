@@ -1,4 +1,5 @@
 from dataclasses import field
+from functools import partial
 
 import marshmallow_dataclass, sys
 from confluent_kafka import Producer
@@ -6,13 +7,10 @@ from marshmallow import EXCLUDE
 
 
 from Models.tables import PickTicketById, Status
+from producer.producer import produce
+
 sys.path.append('/app')
 from contracts import Action, action_schema
-
-
-def produce_action(producer, topic, action: Action, pickticket_id):
-    producer.produce(topic, key=pickticket_id, value=action_schema.dumps(action))
-    producer.poll(1)
 
 
 def get_action(pickticket: PickTicketById):
@@ -39,5 +37,6 @@ def can_pack_pickticket(get_pt, produce, fcid: str, pickticket_id: str):
         return False
     else:
         action = get_action(pickticket)
-        produce(action, pickticket.pickticket_id)
+        produce(action_schema.dumps(action), pickticket.pickticket_id)
         return True
+

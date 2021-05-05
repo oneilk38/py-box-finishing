@@ -8,7 +8,8 @@ from flask import Flask, jsonify, request
 
 from Exceptions.exns import PickTicketNotFoundException, ContainerNotFoundException
 from api.pickticket import get_pickticket_dto
-from api.pack import produce_action, can_pack_pickticket
+from api.pack import can_pack_pickticket
+from producer.producer import produce
 
 from Models.database import db
 # Tables
@@ -30,18 +31,6 @@ db.init_app(app)
 
 
 worker_topic = "pickticket-events"
-
-
-def get_producer():
-    producer_conf = {
-        'bootstrap.servers': 'broker:29092',
-        'client.id': 'kon-api-producer'
-    }
-
-    producer = Producer(producer_conf)
-
-    return producer
-
 
 @app.route('/')
 def hello_world():
@@ -66,9 +55,8 @@ def get(fcid: str, container_id: str):
 @app.route('/api/box-finishing/<fcid>/<pickticket_id>/pack', methods=['PUT'])
 def pack(fcid: str, pickticket_id: str):
     try:
-        producer = get_producer()
-        produce = partial(produce_action, producer, worker_topic)
-        if can_pack_pickticket(PickTicketById.get_pickticket, produce, fcid, pickticket_id):
+        produce_action = partial(produce, 'broker:29092', worker_topic)
+        if can_pack_pickticket(PickTicketById.get_pickticket, produce_action, fcid, pickticket_id):
             return jsonify(f'Successfully packed PickTicket {pickticket_id}'), 201
         else:
             return jsonify(f'Failed to pack PickTicket {pickticket_id}, invalid state for Packing'), 201
