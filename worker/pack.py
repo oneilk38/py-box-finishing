@@ -6,7 +6,7 @@ from typing import List
 sys.path.append('/app')
 from producer.producer import produce
 from app import db
-from Models.tables import PickTicketById, Status, PickedItemsByPickTicket, ItemErrorsByPickTicket
+from common.tables import PickTicketById, Status, PickedItemsByPickTicket, ItemErrorsByPickTicket
 from contracts import Action, Item, Packed, packed_schema
 
 

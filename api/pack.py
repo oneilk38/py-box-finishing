@@ -6,7 +6,7 @@ from confluent_kafka import Producer
 from marshmallow import EXCLUDE
 
 
-from Models.tables import PickTicketById, Status
+from common.tables import PickTicketById, Status
 from producer.producer import produce
 
 sys.path.append('/app')

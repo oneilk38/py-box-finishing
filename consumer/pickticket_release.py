@@ -2,13 +2,13 @@ import typing, sys
 from functools import partial
 
 sys.path.append('/app')
-from Exceptions.exns import PoisonMessageException, PickTicketNotFoundException, InvalidPickTicketStateException
+from common.exceptions import PoisonMessageException, PickTicketNotFoundException, InvalidPickTicketStateException
 
 from dataclasses import dataclass, field
 
 from confluent_kafka import Message
 from app import db
-from Models.tables import AllocationsByPickTicket, RequestedItemsByPickTicket, PickTicketById, Status
+from common.tables import AllocationsByPickTicket, RequestedItemsByPickTicket, PickTicketById, Status
 
 import marshmallow_dataclass
 from marshmallow import EXCLUDE

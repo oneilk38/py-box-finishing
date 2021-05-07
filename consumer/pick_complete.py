@@ -6,8 +6,8 @@ from confluent_kafka import Message
 
 import marshmallow_dataclass
 
-from Exceptions.exns import PickTicketNotFoundException, PoisonMessageException, InvalidPickTicketStateException
-from Models.tables import PickedItemsByPickTicket, PickTicketById, PickTicketByContainer, Status
+from common.exceptions import PickTicketNotFoundException, PoisonMessageException, InvalidPickTicketStateException
+from common.tables import PickedItemsByPickTicket, PickTicketById, PickTicketByContainer, Status
 
 from marshmallow import EXCLUDE
 from app import db

@@ -5,8 +5,8 @@ import marshmallow
 import marshmallow_dataclass
 from marshmallow import Schema, EXCLUDE
 
-from Exceptions.exns import InvalidPickTicketStateException, UnexpectedItemException, InvalidErrorException
-from Models.tables import PickTicketById, Status, RequestedItemsByPickTicket, ItemErrorsByPickTicket
+from common.exceptions import InvalidPickTicketStateException, UnexpectedItemException, InvalidErrorException
+from common.tables import PickTicketById, Status, RequestedItemsByPickTicket, ItemErrorsByPickTicket
 from contracts import Action, action_schema, PickError
 
 

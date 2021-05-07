@@ -1,8 +1,8 @@
 from functools import partial
 from typing import List
 
-from Exceptions.exns import InvalidPickTicketStateException
-from Models.tables import PickTicketById, Status, PickedItemsByPickTicket, ItemErrorsByPickTicket
+from common.exceptions import InvalidPickTicketStateException
+from common.tables import PickTicketById, Status, PickedItemsByPickTicket, ItemErrorsByPickTicket
 from contracts import putwall_schema, Item, Putwall
 from producer.producer import produce
 

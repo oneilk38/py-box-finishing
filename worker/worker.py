@@ -11,7 +11,7 @@ import pack, error, putwall, sys
 
 sys.path.append('/app')
 from contracts import Action, action_schema
-from Exceptions.exns import InvalidPickTicketStateException, PickTicketNotFoundException, PoisonMessageException
+from common.exceptions import InvalidPickTicketStateException, PickTicketNotFoundException, PoisonMessageException
 
 
 from app import db

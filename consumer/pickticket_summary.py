@@ -1,10 +1,10 @@
 import sys
 
 sys.path.append('/app')
-from Exceptions.exns import PoisonMessageException
+from common.exceptions import PoisonMessageException
 
 from app import db
-from Models.tables import PickTicketById, OrderItemsByPickTicket, Status
+from common.tables import PickTicketById, OrderItemsByPickTicket, Status
 
 import typing
 from dataclasses import dataclass, field

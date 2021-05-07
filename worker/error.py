@@ -2,7 +2,7 @@ import sys
 from functools import partial
 from typing import List
 
-from Models.tables import ItemErrorsByPickTicket, PickTicketById
+from common.tables import ItemErrorsByPickTicket, PickTicketById
 from contracts import Action, PickError, PackError, pack_error_schema
 from producer.producer import produce
 

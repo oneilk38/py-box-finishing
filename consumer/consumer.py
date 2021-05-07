@@ -6,7 +6,7 @@ import pick_complete
 
 
 # Kafka Config
-from Exceptions.exns import InvalidPickTicketStateException, PickTicketNotFoundException, PoisonMessageException
+from common.exceptions import InvalidPickTicketStateException, PickTicketNotFoundException, PoisonMessageException
 
 import sys
 

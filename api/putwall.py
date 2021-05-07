@@ -1,4 +1,4 @@
-from Models.tables import PickTicketById, Status
+from common.tables import PickTicketById, Status
 from contracts import Action, action_schema
 
 

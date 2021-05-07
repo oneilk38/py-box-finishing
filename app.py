@@ -6,7 +6,7 @@ from confluent_kafka import Producer
 from flask import Flask, jsonify, request
 
 
-from Exceptions.exns import PickTicketNotFoundException, ContainerNotFoundException, InvalidErrorException, \
+from common.exceptions import PickTicketNotFoundException, ContainerNotFoundException, InvalidErrorException, \
     UnexpectedItemException
 from api.pick_error import can_report_errors
 from api.pickticket import get_pickticket_dto
@@ -15,10 +15,10 @@ from api.putwall import can_move_to_putwall, can_remove_from_putwall
 from contracts import pick_errors_schema
 from producer.producer import produce
 
-from Models.database import db
+from common.database import db
 # Tables
 
-from Models.tables import \
+from common.tables import \
     PickTicketById, \
     OrderItemsByPickTicket, \
     PickedItemsByPickTicket, \

@@ -6,7 +6,7 @@ import marshmallow_dataclass
 from marshmallow import Schema, EXCLUDE, fields
 
 # Tables
-from Models.tables import \
+from common.tables import \
     RequestedItemsByPickTicket, \
     AllocationsByPickTicket, \
     PickTicketById, \

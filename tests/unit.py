@@ -1,6 +1,6 @@
 import unittest
 
-from Models.tables import PickTicketById, Status, OrderItemsByPickTicket
+from common.tables import PickTicketById, Status, OrderItemsByPickTicket
 from consumer.pickticket_summary import Info, PickElement, PickTicketSummary, persist_to_db
 
 from unittest.mock import MagicMock
