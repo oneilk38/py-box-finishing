@@ -1,16 +1,9 @@
-from dataclasses import field
-from functools import partial
-
-import marshmallow_dataclass, sys
-from confluent_kafka import Producer
-from marshmallow import EXCLUDE
-
+import sys
 
 from common.tables import PickTicketById, Status
-from producer.producer import produce
 
 sys.path.append('/app')
-from contracts import Action, action_schema
+from common.contracts import Action, action_schema
 
 
 def get_action(pickticket: PickTicketById):

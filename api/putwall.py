@@ -1,5 +1,5 @@
 from common.tables import PickTicketById, Status
-from contracts import Action, action_schema
+from common.contracts import Action, action_schema
 
 
 def is_invalid_status(status: Status):

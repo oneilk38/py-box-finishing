@@ -1,18 +1,14 @@
-import typing, sys
+import sys
 from functools import partial
 
 sys.path.append('/app')
-from common.exceptions import PoisonMessageException, PickTicketNotFoundException, InvalidPickTicketStateException
-
-from dataclasses import dataclass, field
+from common.exceptions import PoisonMessageException, InvalidPickTicketStateException
 
 from confluent_kafka import Message
 from app import db
 from common.tables import AllocationsByPickTicket, RequestedItemsByPickTicket, PickTicketById, Status
 
-import marshmallow_dataclass
-from marshmallow import EXCLUDE
-from contracts import PickTicketReleased, PickItem, pt_release_schema
+from common.contracts import PickTicketReleased, PickItem, pt_release_schema
 
 
 

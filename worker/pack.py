@@ -7,7 +7,7 @@ sys.path.append('/app')
 from producer.producer import produce
 from app import db
 from common.tables import PickTicketById, Status, PickedItemsByPickTicket, ItemErrorsByPickTicket
-from contracts import Action, Item, Packed, packed_schema
+from common.contracts import Action, Item, Packed, packed_schema
 
 
 def get_pick_less_shortages(pickticket: PickTicketById, pick: PickedItemsByPickTicket, get_error):

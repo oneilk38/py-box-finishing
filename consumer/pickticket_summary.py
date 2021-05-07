@@ -6,14 +6,10 @@ from common.exceptions import PoisonMessageException
 from app import db
 from common.tables import PickTicketById, OrderItemsByPickTicket, Status
 
-import typing
-from dataclasses import dataclass, field
 from confluent_kafka import Message
 
-import marshmallow_dataclass
-from marshmallow import EXCLUDE
 from functools import partial
-from contracts import PickTicketSummary, PickElement, pt_summary_schema
+from common.contracts import PickTicketSummary, PickElement, pt_summary_schema
 
 
 def to_pickticket_by_id(summary: PickTicketSummary) -> PickTicketById:

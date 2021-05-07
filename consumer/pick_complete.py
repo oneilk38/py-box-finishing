@@ -1,17 +1,12 @@
-import typing
-from dataclasses import dataclass, field
 from functools import partial
 
 from confluent_kafka import Message
 
-import marshmallow_dataclass
-
 from common.exceptions import PickTicketNotFoundException, PoisonMessageException, InvalidPickTicketStateException
 from common.tables import PickedItemsByPickTicket, PickTicketById, PickTicketByContainer, Status
 
-from marshmallow import EXCLUDE
 from app import db
-from contracts import Pick, PickComplete, pick_completed_schema
+from common.contracts import Pick, PickComplete, pick_completed_schema
 
 
 def to_pickticket_by_container(pick_complete: PickComplete, pickticket: PickTicketById):

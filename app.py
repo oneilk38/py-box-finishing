@@ -1,8 +1,6 @@
 import json
-import typing
 from functools import partial
 
-from confluent_kafka import Producer
 from flask import Flask, jsonify, request
 
 
@@ -12,7 +10,7 @@ from api.pick_error import can_report_errors
 from api.pickticket import get_pickticket_dto
 from api.pack import can_pack_pickticket
 from api.putwall import can_move_to_putwall, can_remove_from_putwall
-from contracts import pick_errors_schema
+from common.contracts import pick_errors_schema
 from producer.producer import produce
 
 from common.database import db
@@ -20,11 +18,7 @@ from common.database import db
 
 from common.tables import \
     PickTicketById, \
-    OrderItemsByPickTicket, \
-    PickedItemsByPickTicket, \
-    PickTicketByContainer, \
-    AllocationsByPickTicket, \
-    RequestedItemsByPickTicket, ItemErrorsByPickTicket
+    ItemErrorsByPickTicket
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:root@db/box-finishing"

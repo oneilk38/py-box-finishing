@@ -3,7 +3,7 @@ from functools import partial
 from typing import List
 
 from common.tables import ItemErrorsByPickTicket, PickTicketById
-from contracts import Action, PickError, PackError, pack_error_schema
+from common.contracts import Action, PickError, PackError, pack_error_schema
 from producer.producer import produce
 
 sys.path.append('/app')

@@ -3,7 +3,7 @@ from typing import List
 
 from common.exceptions import InvalidPickTicketStateException
 from common.tables import PickTicketById, Status, PickedItemsByPickTicket, ItemErrorsByPickTicket
-from contracts import putwall_schema, Item, Putwall
+from common.contracts import putwall_schema, Item, Putwall
 from producer.producer import produce
 
 import sys

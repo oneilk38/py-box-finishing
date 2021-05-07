@@ -1,4 +1,4 @@
-from confluent_kafka import Consumer, KafkaError, KafkaException, admin, Message
+from confluent_kafka import Consumer, KafkaException, admin, Message
 from functools import partial
 import pickticket_release
 import pickticket_summary
@@ -9,8 +9,6 @@ import pick_complete
 from common.exceptions import InvalidPickTicketStateException, PickTicketNotFoundException, PoisonMessageException
 
 import sys
-
-from contracts import Packed, packed_schema
 
 sys.path.append('/app')
 
