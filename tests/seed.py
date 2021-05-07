@@ -1,7 +1,7 @@
 import json, time, sys
 
 sys.path.append('/app')
-from producer.producer import produce
+from common.producer import produce
 
 
 def acked(err, msg):

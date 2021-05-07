@@ -11,7 +11,7 @@ from api.pickticket import get_pickticket_dto
 from api.pack import can_pack_pickticket
 from api.putwall import can_move_to_putwall, can_remove_from_putwall
 from common.contracts import pick_errors_schema
-from producer.producer import produce
+from common.producer import produce
 
 from common.database import db
 # Tables

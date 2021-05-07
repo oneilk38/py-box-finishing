@@ -4,7 +4,7 @@ from typing import List
 
 from common.tables import ItemErrorsByPickTicket, PickTicketById
 from common.contracts import Action, PickError, PackError, pack_error_schema
-from producer.producer import produce
+from common.producer import produce
 
 sys.path.append('/app')
 
