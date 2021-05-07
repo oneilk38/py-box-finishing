@@ -31,3 +31,13 @@ class InvalidPickTicketStateException(Exception):
 class PoisonMessageException(Exception):
     def __init__(self, message):
         super().__init__(message)
+
+
+class UnexpectedItemException(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
+class InvalidErrorException(Exception):
+    def __init__(self, message):
+        super().__init__(message)

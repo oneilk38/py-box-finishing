@@ -12,35 +12,9 @@ from Models.tables import AllocationsByPickTicket, RequestedItemsByPickTicket, P
 
 import marshmallow_dataclass
 from marshmallow import EXCLUDE
+from contracts import PickTicketReleased, PickItem, pt_release_schema
 
 
-# Pick Ticket Released
-@dataclass
-class PickItem:
-    class Meta:
-        unknown = EXCLUDE
-    gtin: str = field(metadata={}, default='gtin')
-    quantity: int = field(metadata={}, default=1)
-
-
-PickItemList = typing.List[PickItem]
-AllocationMap = typing.Dict[str, PickItemList]
-
-
-@dataclass
-class PickTicketReleased:
-    class Meta:
-        unknown = EXCLUDE
-    pickTicketId: str = field(metadata={}, default='ptId')
-    fcId: str = field(metadata={}, default='fcId')
-    cutOff: str = field(metadata={}, default='cutofftime')
-    priority: int = field(metadata={}, default=1)
-    requestedItems: typing.List[PickItem] = field(default_factory=list)
-    allocations: AllocationMap = field(default_factory=dict)
-    timestamp: str = field(metadata={}, default='timestamp')
-
-
-pt_release_schema = marshmallow_dataclass.class_schema(PickTicketReleased)()
 
 
 def to_allocation_by_pickticket(item: PickItem, pickticket: PickTicketById) -> AllocationsByPickTicket:
@@ -89,6 +63,7 @@ def deserialise(msg: Message):
 def persist_released_to_db(session, pt_released: PickTicketReleased, pickticket : PickTicketById):
     allocations = to_allocations_by_pickticket(pickticket, pt_released)
     requested_items = to_requested_items_by_pickticket(pickticket, pt_released)
+    print(f'Requested items.....{requested_items}')
     session.add_all(allocations)
     session.add_all(requested_items)
     session.commit()

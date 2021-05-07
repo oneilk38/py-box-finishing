@@ -41,21 +41,6 @@ def to_order_item(gtin, imageUrl, isHazmat, isORMD, title):
     return OrderItem(gtin=gtin, imageUrl=imageUrl, isHazmat=isHazmat, isORMD=isORMD, title=title)
 
 
-
-@dataclass
-class Packed(Schema):
-    class Meta:
-        unknown = EXCLUDE
-        #fields = ['packed_items']
-    packed_items: List[Item] = fields.Nested(item_schema, many=True)
-    fcid: str = field(metadata={}, default='fcid')
-    pickticket_id: str = field(metadata={}, default='pickticketid')
-    container_id: str = field(metadata={}, default='33030101')
-
-    cancelled_items: List[Item] = field(default_factory=list)
-    previous_lpns: List[str] = field(default_factory=list)
-
-
 def to_pickticket_response(pickticket_by_id: PickTicketById):
 
     order_items = [to_order_item(item.gtin, item.url, item.hazmat, item.fragile, item.title) for item in pickticket_by_id.order_items]

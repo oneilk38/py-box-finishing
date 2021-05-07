@@ -11,30 +11,7 @@ from Models.tables import PickedItemsByPickTicket, PickTicketById, PickTicketByC
 
 from marshmallow import EXCLUDE
 from app import db
-
-
-@dataclass
-class Pick:
-    class Meta:
-        unknown = EXCLUDE
-    gtin: str = field(metadata={}, default='gtin')
-    quantity: int = field(metadata={}, default=1)
-
-
-@dataclass
-class PickComplete:
-    pickTicketId: str = field(metadata={}, default='ptId')
-    fcId: str = field(metadata={}, default='fcId')
-    sheetId: int = field(default=1)
-    containerId: str = field(metadata={}, default='containerId')
-    orderId: str = field(metadata={}, default='orderId')
-    containerType: str = field(metadata={}, default='containerType')
-    destination: str = field(metadata={}, default='destination')
-    pickingSource: str = field(metadata={}, default='source')
-    picks: typing.List[Pick] = field(default_factory=list)
-
-
-pick_completed_schema = marshmallow_dataclass.class_schema(PickComplete)()
+from contracts import Pick, PickComplete, pick_completed_schema
 
 
 def to_pickticket_by_container(pick_complete: PickComplete, pickticket: PickTicketById):

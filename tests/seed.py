@@ -1,5 +1,6 @@
-import json, time
+import json, time, sys
 
+sys.path.append('/app')
 from producer.producer import produce
 
 
@@ -36,8 +37,22 @@ def getSummaryMsg(pickticket_id):
             "pickItems": [
                 {
                     "gtin": "GTIN-1",
-                    "unitQty": 100,
-                    "pickQty": 100,
+                    "unitQty": 1,
+                    "pickQty": 1,
+                    "productTitle": "a",
+                    "imgUrl": "n",
+                    "pickWeight": 0.6017836013150548366601785366,
+                    "unitWeight": 0.6017836013150548366601785366,
+                    "sellerId": "A",
+                    "unitOfMeasure": "W",
+                    "isORMD": False,
+                    "unClassification": None,
+                    "alcohol": None
+                },
+                {
+                    "gtin": "GTIN-2",
+                    "unitQty": 2,
+                    "pickQty": 2,
                     "productTitle": "a",
                     "imgUrl": "n",
                     "pickWeight": 0.6017836013150548366601785366,
@@ -98,8 +113,25 @@ def getReleasedMsg(pickticket_id):
         "cutOff": "2093-05-12T18:08:17.829-05:11",
         "priority": 0,
         "destination": "Box",
-        "allocations": {"asrs": [{"gtin": "GTIN-1", "quantity": 100}]},
-        "requestedItems": [{"gtin": "GTIN-1", "quantity": 100}],
+        "allocations": {"asrs": [
+            {
+              "gtin": "GTIN-1",
+              "quantity": 1
+            },
+            {
+                "gtin": "GTIN-2",
+                "quantity": 2
+            }]},
+        "requestedItems": [
+            {
+                "gtin": "GTIN-1",
+                "quantity": 1
+            },
+            {
+                "gtin": "GTIN-2",
+                "quantity": 2
+            }
+        ],
         "timestamp": "ts"
     })
 
@@ -117,7 +149,11 @@ def getPickCompleteMsg(pickticket_id, container_id):
         'picks': [
             {
               "gtin": "GTIN-1",
-              "quantity": 100
+              "quantity": 1
+            },
+            {
+                "gtin": "GTIN-2",
+                "quantity": 1
             }
         ]
     })
@@ -135,8 +171,8 @@ def run_complete_producer(pickticket_id, container_id):
     produce(broker='localhost:9092', topic="pick-completed", key="msg1", json=getPickCompleteMsg(pickticket_id, container_id))
 
 
-pickticket_id = "96203503AAX"
-container_id = "409549"
+pickticket_id = "9610PTG"
+container_id = "330242432557"
 
 run_summary_producer(pickticket_id)
 time.sleep(2.0)

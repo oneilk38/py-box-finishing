@@ -41,6 +41,7 @@ class PickTicketById(db.Model):
     allocations = db.relationship('AllocationsByPickTicket', backref='pickticket')
     requested_items = db.relationship('RequestedItemsByPickTicket', backref='pickticket')
     container = db.relationship('PickTicketByContainer', backref='pickticket')
+    errors = db.relationship('ItemErrorsByPickTicket', backref='pickticket')
 
     def __eq__(self, other):
         return  (self.pickticket_id == other.pickticket_id) and \
@@ -119,6 +120,30 @@ class RequestedItemsByPickTicket(db.Model):
     quantity = Column(Integer, nullable=False, default=1)
 
     # UniqueConstraint('fcid', 'pickticket_id', 'gtin', name='requested_item_unique')
+
+
+@dataclass
+class ItemErrorsByPickTicket(db.Model):
+    __tablename__ = "item-error"
+    id = Column(Integer, primary_key=True)
+    pickticket_id = Column(String(200), db.ForeignKey(PickTicketById.pickticket_id))
+    fcid = Column(String(200))
+    gtin = Column(String(200))
+    missing = Column(Integer, nullable=False, default=1)
+    damaged = Column(Integer, nullable=False, default=1)
+    overage = Column(Integer, nullable=False, default=1)
+
+    @staticmethod
+    def get_item_error_by_pickticket(fcid, pickticket_id, gtin):
+        error = ItemErrorsByPickTicket.query.filter_by(pickticket_id=pickticket_id, fcid=fcid, gtin=gtin).first()
+        return error
+
+    @staticmethod
+    def get_item_errors_by_pickticket(fcid, pickticket_id):
+        errors = ItemErrorsByPickTicket.query.filter_by(pickticket_id=pickticket_id, fcid=fcid)
+        return errors
+
+    # UniqueConstraint('fcid', 'pickticket_id', 'gtin', name='item_error_unique')
 
 
 @dataclass

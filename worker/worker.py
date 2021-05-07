@@ -7,9 +7,8 @@ from functools import partial
 # Kafka Config
 from marshmallow import EXCLUDE
 
-import pack
+import pack, error, putwall, sys
 
-import sys
 sys.path.append('/app')
 from contracts import Action, action_schema
 from Exceptions.exns import InvalidPickTicketStateException, PickTicketNotFoundException, PoisonMessageException
@@ -28,6 +27,7 @@ kafka_admin = admin.AdminClient({'bootstrap.servers': 'broker:29092'})
 worker_topic = admin.NewTopic('pickticket-events', 1, 1)
 
 kafka_admin.create_topics([worker_topic])
+
 
 def handle_with_retry(handle, msg, retry_attempt=0):
     def retry(attempt, error_msg):
@@ -63,6 +63,9 @@ def handle(msg: Message):
     if msg.topic() == worker_topic.topic:
         action: Action = deserialise(msg)
         if action.type == "PACKED": handle_with_retry(pack.handle, action)
+        elif action.type == "PICK_ERROR": handle_with_retry(error.handle, action)
+        elif action.type == "MOVE_TO_PUTWALL": handle_with_retry(putwall.handle_moved, action)
+        elif action.type == "REMOVE_FROM_PUTWALL": handle_with_retry(putwall.handle_removed, action)
         else:
             print("Unknown action, ignoring...")
     else:

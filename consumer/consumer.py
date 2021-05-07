@@ -46,9 +46,7 @@ handle_pick_completed = partial(pick_complete.handle_pick_completed,
 
 # Handle Message
 def handle_other(msg: Message):
-    print(f'Consuming {new_topic.topic}....')
-    packed = packed_schema.loads(msg.value())
-    print(packed)
+    print(f'Consuming {new_topic.topic}....{msg.value()}')
 
 
 def handle_with_retry(handle, msg, retry_attempt=0):
